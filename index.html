@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I Love You</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Caveat:wght@500&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* A more sophisticated color palette */
+            --primary-red: #c1121f;
+            --soft-pink: #fff0f3;
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-bg: rgba(255, 255, 255, 0.35);
+            --card-shadow: 0 8px 32px 0 rgba(239, 35, 60, 0.15);
+            --locked-color: #8d99ae;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #ffdde1 0%, #ee9ca7 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background Hearts */
+        .bg-hearts {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        .bg-heart {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 20px;
+            animation: floatUp linear infinite;
+        }
+
+        header {
+            text-align: center;
+            margin: 40px 0 50px 0;
+            color: var(--primary-red);
+            text-shadow: 0 2px 10px rgba(255,255,255,0.5);
+            animation: fadeInDown 1s ease-out;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            margin: 0;
+            letter-spacing: -1px;
+        }
+
+        p.subtitle {
+            font-size: 1.1rem;
+            font-weight: 300;
+            margin-top: 10px;
+            background: rgba(255,255,255,0.4);
+            padding: 8px 20px;
+            border-radius: 50px;
+            display: inline-block;
+        }
+
+        /* THE GRID LAYOUT */
+        .grid-container {
+            display: grid;
+            /* Adaptive grid: 4 columns on desktop, 2 on mobile */
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            max-width: 900px;
+            width: 95%;
+            padding-bottom: 60px;
+        }
+
+        @media (min-width: 768px) {
+            .grid-container {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 25px;
+            }
+        }
+
+        /* CARD STYLING */
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            aspect-ratio: 3/4; /* Slightly tall portrait shape */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            cursor: pointer;
+            box-shadow: var(--card-shadow);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+            
+            /* Initial state for entry animation */
+            opacity: 0; 
+            transform: translateY(30px);
+            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(239, 35, 60, 0.25);
+            border-color: #fff;
+        }
+
+        /* UNLOCKED STYLE */
+        .card.unlocked {
+            background: rgba(255, 255, 255, 0.85);
+        }
+
+        .card.unlocked .day-label {
+            font-family: 'Playfair Display', serif;
+            color: var(--primary-red);
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .card.unlocked .tap-hint {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        /* LOCKED STYLE */
+        .card.locked {
+            background: rgba(255, 255, 255, 0.15); /* Darker/Frosted */
+            cursor: not-allowed;
+        }
+        
+        .card.locked:hover {
+            transform: none; /* Don't lift locked cards */
+            box-shadow: var(--card-shadow);
+        }
+
+        .card.locked .day-label {
+            font-family: 'Playfair Display', serif;
+            color: var(--locked-color);
+            font-size: 1.5rem;
+        }
+
+        .lock-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        /* MODAL (Popup) */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-card {
+            background: white;
+            width: 85%;
+            max-width: 400px;
+            padding: 40px 30px;
+            border-radius: 20px;
+            text-align: center;
+            transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            border: 2px solid #fff0f3;
+            position: relative;
+        }
+
+        .modal-card h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--primary-red);
+            margin: 0 0 20px 0;
+            font-size: 2rem;
+        }
+
+        .modal-text {
+            font-family: 'Caveat', cursive; /* Handwriting font */
+            font-size: 1.8rem;
+            color: #4a4e69;
+            line-height: 1.4;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px; right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #aaa;
+            transition: color 0.2s;
+        }
+        .close-btn:hover { color: var(--primary-red); }
+
+        /* ANIMATIONS */
+        @keyframes floatUp {
+            0% { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+            20% { opacity: 0.6; }
+            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.7; }
+        }
+        
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Show modal animation class */
+        .modal.show {
+            display: flex;
+            opacity: 1;
+        }
+        .modal.show .modal-card {
+            transform: scale(1);
+        }
+
+        /* HEART BURST ANIMATION */
+        .burst-heart {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+            font-size: 20px;
+            animation: flyAndFade 1s ease-out forwards;
+        }
+
+        @keyframes flyAndFade {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-hearts" id="bg-hearts"></div>
+
+    <header>
+        <h1>A & D's Valentine Countdown</h1>
+        <p class="subtitle" id="countdown-timer">Calculating next surprise...</p>
+    </header>
+
+    <div class="grid-container" id="card-container">
+        </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-card">
+            <div class="close-btn">&times;</div>
+            <h2 id="modal-date">Feb 14</h2>
+            <div class="modal-text" id="modal-text">Reason goes here...</div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        
+        const reasons = [
+            "Rose Day: Just like a rose, you brought color and fragrance into my life when things felt gray. I wanted to start this countdown by telling you that my love for you grows more beautiful with every passing day. You are the most exquisite bloom in my garden, and I promise to always protect and cherish you.",
+            "You make the best coffee, but it's your company I crave.",
+            "How you always know exactly what to say to calm me down.",
+            "Your laugh is genuinely my favorite sound in the world.",
+            "The way you look at me when you think I'm not looking.",
+            "You support my dreams even when they sound crazy.",
+            "We can sit in silence and it never feels awkward.",
+            "You are my best friend and my greatest love. Happy Valentine's!"
+        ];
+
+        const startDay = 7; // Countdown starts Feb 7th
+        const testingMode = true; // Set to true to see all cards unlocked
+
+        // --- LOGIC ---
+
+        const container = document.getElementById('card-container');
+        const modal = document.getElementById('modal');
+        const modalDate = document.getElementById('modal-date');
+        const modalText = document.getElementById('modal-text');
+        const closeBtn = document.querySelector('.close-btn');
+        const today = new Date();
+        const currentMonth = today.getMonth(); 
+        const currentDay = today.getDate();
+
+        // 1. Create Background Hearts
+        const heartContainer = document.getElementById('bg-hearts');
+        for(let i=0; i<30; i++) {
+            let heart = document.createElement('div');
+            heart.classList.add('bg-heart');
+            heart.innerHTML = Math.random() > 0.5 ? '❤' : '♥';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
+            heart.style.animationDuration = (Math.random() * 5 + 5) + 's';
+            heart.style.animationDelay = (Math.random() * 5) + 's';
+            heartContainer.appendChild(heart);
+        }
+
+        // 2. Build the Grid
+        reasons.forEach((reason, index) => {
+            const dateNum = startDay + index; 
+            const card = document.createElement('div');
+            card.classList.add('card');
+            
+            // Stagger animation delay so they pop in one by one
+            card.style.animationDelay = (index * 0.1) + 's';
+
+            let isUnlocked = false;
+            if (testingMode) isUnlocked = true;
+            else if (currentMonth > 1) isUnlocked = true; 
+            else if (currentMonth === 1 && currentDay >= dateNum) isUnlocked = true;
+
+            if (isUnlocked) {
+                card.classList.add('unlocked');
+                card.innerHTML = `
+                    <div class="day-label">Feb ${dateNum}</div>
+                    <div class="tap-hint">Tap to Open</div>
+                `;
+                card.addEventListener('click', (e) => {
+                    createHeartBurst(e.clientX, e.clientY);
+                    openModal(dateNum, reason);
+                });
+            } else {
+                card.classList.add('locked');
+                card.innerHTML = `
+                    <div class="lock-icon">🔒</div>
+                    <div class="day-label">Feb ${dateNum}</div>
+                `;
+                card.addEventListener('click', () => {
+                    // Shake effect for locked cards
+                    card.style.animation = 'none';
+                    card.offsetHeight; /* trigger reflow */
+                    card.style.animation = 'shake 0.5s';
+                });
+            }
+
+            container.appendChild(card);
+        });
+
+        // Modal Logic
+        function openModal(date, text) {
+            modalDate.innerText = `February ${date}`;
+            modalText.innerText = text;
+            modal.classList.add('show');
+        }
+
+        function closeModal() {
+            modal.classList.remove('show');
+        }
+
+        closeBtn.onclick = closeModal;
+        modal.onclick = (e) => {
+            if(e.target === modal) closeModal();
+        }
+
+        // Add shake keyframes dynamically for the locked effect
+        const styleSheet = document.createElement("style");
+        styleSheet.innerText = `
+            @keyframes shake {
+                0% { transform: translateX(0); }
+                25% { transform: translateX(-5px); }
+                50% { transform: translateX(5px); }
+                75% { transform: translateX(-5px); }
+                100% { transform: translateX(0); }
+            }
+        `;
+        document.head.appendChild(styleSheet);
+
+        function updateTimer() {
+            const now = new Date();
+            const timerElement = document.getElementById('countdown-timer');
+    
+            // Find the next locked date
+            let nextDate = null;
+            for (let i = 0; i < reasons.length; i++) {
+                 const targetDay = startDay + i;
+                const targetDate = new Date(2026, 1, targetDay); // February is month 1
+        
+                if (now < targetDate) {
+                    nextDate = targetDate;
+                    break;
+                }
+            }
+
+            if (!nextDate) {
+                timerElement.innerText = "All surprises are unlocked! ❤️";
+                return;
+            }
+
+            const diff = nextDate - now;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            timerElement.innerText = `Next unlock in: ${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        // Update the timer every second
+        setInterval(updateTimer, 1000);
+        updateTimer();
+
+        function createHeartBurst(x, y) {
+            const heartCount = 12; // Number of hearts per click
+            for (let i = 0; i < heartCount; i++) {
+                const heart = document.createElement('div');
+                heart.innerHTML = '❤️';
+                heart.className = 'burst-heart';
+                
+                // Randomize the travel distance (direction)
+                const tx = (Math.random() - 0.5) * 200 + 'px';
+                const ty = (Math.random() - 0.5) * 200 + 'px';
+                
+                heart.style.setProperty('--tx', tx);
+                heart.style.setProperty('--ty', ty);
+                
+                // Position at the click coordinates
+                heart.style.left = x + 'px';
+                heart.style.top = y + 'px';
+                
+                document.body.appendChild(heart);
+                
+                // Clean up the element after animation ends
+                setTimeout(() => heart.remove(), 1000);
+            }
+        }
+
+    </script>
+</body>
+</html>
